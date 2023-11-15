@@ -1,17 +1,13 @@
-import time
-
 import json
 import asyncio
 import os
 from datetime import datetime
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
-from aiogram import F
-from aiogram.types import Message, chat
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import Message, ReplyKeyboardMarkup
 from dotenv import load_dotenv
 
 load_dotenv()
