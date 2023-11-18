@@ -24,7 +24,7 @@ filename = 'data/dates.json'
 
 CHANNEL_NAME = '@Buktop_bot'
 
-BTN_START = "/Начинай"
+BTN_START = "/сколько"
 BTN_RESET = "/Обнуляй"
 
 
@@ -39,21 +39,25 @@ async def start(message: Message):
     await bot.send_message(message.chat.id, 'погнали!', reply_markup=reply)
 
 
-@dp.message(Command("Начинай"))
-async def print_days_count_without_errors(message) -> None:
+def get_days_count_without_errors() -> int:
     date_format = '%Y-%m-%d'
     current_date = datetime.now().date()
 
     with open(filename, 'r') as json_file:
         json_text = json.load(json_file)
         last_date = json_text["date_of_posting"]
-
     days_without_errors = (current_date - datetime.strptime(last_date, date_format).date()).days
-    await bot.send_message(message.chat.id, 'дней без инцидентов {}'.format(days_without_errors))
 
-    # json_text["date_of_posting"] = f"{datetime.now().date()}"
-    # with open(filename, 'w') as json_file:
-    #     json.dump(json_text, json_file)
+    return days_without_errors
+
+
+@dp.message(Command("сколько"))
+async def print_days_count_without_errors(message: types.Message) -> None:
+    await bot.send_message(message.chat.id, 'дней без инцидентов {}'.format(get_days_count_without_errors()))
+
+
+async def send_days_count_without_errors() -> None:
+    await bot.send_message(630700190, 'дней без инцидентов {}'.format(get_days_count_without_errors()))
 
 
 @dp.message(Command("Обнуляй"))
@@ -67,13 +71,6 @@ async def reset_days_without_errors(message) -> None:
     await bot.send_message(message.chat.id, '{}'.format("Обнулились"))
 
 
-# def job():
-#     schedule.every(10).seconds.do(print("I'm working..."))
-#     while True:
-#         schedule.run_pending()
-#         time.sleep(1)
-
-
 @dp.message(F.text)
 async def handle_text(message) -> None:
     if message.text.strip() == 'ботя':
@@ -82,13 +79,36 @@ async def handle_text(message) -> None:
 
 
 @dp.message()
-async def handle_text2() -> None:
-    await bot.send_message(630700190, "расписание робит")
+async def send_joke():
+    with open('data/fun.txt', 'r', encoding='utf-8') as file:
+        last_sent_line = get_last_sent_joke_number()
+        lines = file.read().split('1')
+        if last_sent_line < len(lines):
+            line_to_send = lines[last_sent_line].strip()
+            await bot.send_message(630700190, line_to_send)
+            update_last_sent_line_number(last_sent_line + 1)
+
+
+def update_last_sent_line_number(line_number):
+    with open('data/joke_state.txt', 'w') as state_file:
+        state_file.write(str(line_number))
+
+
+def get_last_sent_joke_number():
+    try:
+        with open('data/joke_state.txt', 'r') as state_file:
+            content = state_file.read().strip()
+            return int(content) if content else 0
+    except FileNotFoundError:
+        return 0
 
 
 def on_startup() -> None:
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(handle_text2, "interval", seconds=1)
+    scheduler.add_job(send_joke, "interval", seconds=10)
+    scheduler.add_job(send_days_count_without_errors, "interval", seconds=10)
+    # scheduler.add_job(send_joke, "cron", hour=15, minute=00)
+    # scheduler.add_job(send_joke, "cron", hour=15, minute=00)
     scheduler.start()
 
 
